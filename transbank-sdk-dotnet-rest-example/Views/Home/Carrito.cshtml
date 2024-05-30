@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Carrito de Compras</title>
+</head>
+<body>
+    <h1>Carrito de Compras</h1>
+    <div id="carrito">
+        <!-- Lista de productos -->
+    </div>
+    <h2>Total: $<span id="total">0</span></h2>
+    <button id="pagar">
+        @Html.ActionLink("Pagar", "NormalCreate", "WebpayPlus")
+    </button>
+
+    <script>
+        const carrito = [
+            { id: 1, nombre: 'Producto 1', precio: 10000 },
+            { id: 2, nombre: 'Producto 2', precio: 15000 },
+            // Añade más productos aquí
+        ];
+
+        function mostrarCarrito() {
+            const carritoDiv = document.getElementById('carrito');
+            carritoDiv.innerHTML = '';
+            carrito.forEach(producto => {
+                carritoDiv.innerHTML += `<p>${producto.nombre}: $${producto.precio}</p>`;
+            });
+            calcularTotal();
+        }
+
+        function calcularTotal() {
+            const total = carrito.reduce((sum, producto) => sum + producto.precio, 0);
+            document.getElementById('total').innerText = total;
+            return total;
+        }
+
+        document.getElementById('pagar').addEventListener('click', () => {
+            const total = calcularTotal();
+            iniciarTransaccion(total);
+        });
+
+        function iniciarTransaccion(total) {
+            const data = {
+                buy_order: '829196413',  // Genera un número de orden único
+                session_id: '152382770',  // Genera un ID de sesión único
+                amount: total,
+                return_url: 'http://localhost:62759/WebpayPlus/NormalReturn'
+            };
+
+            fetch('https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.0/transactions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(response => {
+                const { token, url } = response;
+                window.location.href = `${url}?token_ws=${token}`;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Mostrar el carrito al cargar la página
+        mostrarCarrito();
+    </script>
+</body>
+</html>
